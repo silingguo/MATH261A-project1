@@ -1,7 +1,7 @@
 ---
 title: "Title"
 subtitle: "Subtitle"
-author: "Your Name"
+author: "Siling Guo"
 thanks: "Project repository available at: [https://github.com/peteragao/MATH261A-project-template](https://github.com/peteragao/MATH261A-project-template)."
 date: today
 date-format: long
