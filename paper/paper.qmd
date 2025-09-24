@@ -9,6 +9,7 @@ abstract: " This study explores the relationship between the number of new COVID
 format: pdf
 bibliography: references.bib
 number-sections: true
+
 ---
 
 ```{r}
@@ -164,7 +165,7 @@ ggplot(covid_vents_mode, aes(x = covid_new,y = vents_pts) )+
   labs(
     x = "	Number of new COVID cases",
     y = "	Number of patients on ventilators",
-    title = "Number of patients on ventilators vs. Number of new COVID cases")+
+    title = "Number of patients on ventilators vs. \n Number of new COVID cases")+
   theme_minimal() 
 
 ```
