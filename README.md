@@ -9,7 +9,7 @@ Data used in this project is obtained from [Santa Clara County Open Data Portal]
 
 The final report and code were written by Siling Guo, but the following resources were used for preliminary research:
 
-* LLM(ex.chatgpt) for explaining terminology.
+* LLM(ex.chatgpt,chatgptEdu) for explaining terminology,R syntax,references.bib format,Github-Tutorials
 * Online forums (ex. csdn,runoob) for studying and understanding various methods for generating tables of data.
 * Wikipedia was used as a supplementary resource to gain background information. 
 * Google Translate for translation assistance.
@@ -20,5 +20,4 @@ The final report and code were written by Siling Guo, but the following resource
 
 # Acknowledgments
 
-This project repository is based on the template provided by [Peter Gao](https://github.com/peteragao/MATH261A-project-template).
-
+This project repository is based on the template provided by [Rohan Alexander](https://github.com/RohanAlexander/starter_folder/tree/main).
