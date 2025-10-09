@@ -1,11 +1,11 @@
 ---
-title: "The Relationship Between the Number of New COVID-19 Cases and the Number of Patients on Ventilators"
+title: "The Relationship Between the COVID-19 Cases and the Demand of Ventilators"
 subtitle: "Simple Linear Model Project"
 author: "Siling Guo"
-thanks: "Project repository available at: [https://github.com/silingguo/MATH261A-project-template](https://github.com/silingguo/MATH261A-project1)."
+thanks: "Project repository available at: [https://github.com/silingguo/MATH261A-project1](https://github.com/silingguo/MATH261A-project1)."
 date: 2025-09-23
 date-format: long
-abstract: " This study explores the relationship between the number of new COVID-19 cases and the number of patients on ventilators. A simple linear regression model was established based on the data provided by the County of Santa Clara Public Health Department between 2020-03-27 and 2021-05-23. The model shows a significant positive correlation between the two variables; there was an expected increase of 0.97 ventilator patients for each additional COVID-19 case ($\\beta_1$=0.97, p<0.001 ). The number of new COVID-19 cases is a significant predictor of ventilator demand ( R Squared=0.62 ). This model can help predict the potential demand for medical devices during a pandemic."
+abstract: "This study explores the relationship between the change in the number of new COVID-19 cases and daily ventilator demand during the COVID-19 pandemic. A simple linear regression model was established based on the data provided by the County of Santa Clara Public Health Department between 2020-03-27 and 2021-05-23. In the model, we use a weighted index of daily new COVID-19 cases (20%) and the 7-day average percent of COVID-19 cases (80%) as the independent variable, and ventilator demand as the dependent variable. The results shows a positive correlation, and there was an expected increase of 1.2 units of ventilator demand for each unit increase in the weighted index ($\\beta_1$=1.2, p<0.001, R Squared=0.78). This model may not have strong predictive power because it is based on time series data. However, it helps illustrate the potential demand for medical equipment during pandemics."
 format: pdf
 bibliography: references.bib
 number-sections: true
@@ -24,154 +24,218 @@ library(gt)
 library(broom)
 library(readr)
 library(flextable)
+library(scales)
 COVID_19_hospitalizations_by_date_20250917 <- read_csv("../data/COVID-19_hospitalizations_by_date_20250917.csv")
 View(COVID_19_hospitalizations_by_date_20250917)
 ```
 
 # Introduction
 
-The 2020-2023 COVID-19 pandemic magnified the imbalance between the limited amount of medical resources and the surging number of new incoming medical patients worldwide. The pandemic significantly disrupted the health service system[@filip_global_2022], especially in resource-limited countries. Even though the COVID-19 pandemic has ended, understanding the correlation between new COVID-19 cases and the number of patients requiring ventilators is useful for analyzing the potential demand for medical devices during a pandemic. This project aims to analyze the impact of the number of COVID-19 cases on ventilator usage using the linear regression model based on the data set published by the Count of Santa Clara Public Health Department from 2020-03-27 to 2021-05-23[@noauthor_covid-19_nodate]. First, we will discuss the research background and proposal followed by the usage and processing of the data. Next, we will explain the setup and validation of the model and its limitations before showing the results with relevant tables and graphs along with our conclusion.Through analysis, we found a significant positive correlation between the increase in the number of COVID-19 cases and the growth in the number of patients requiring ventilators.
+The 2020-2023 COVID-19 pandemic illustrated the challenges in balancing the limited availability of medical resources with the influx of demand caused by the surge in new COVID-19 cases, especially in resource-limited countries. Although the COVID-19 pandemic has ended, analyzing the relationship between the rate of new COVID-19 cases and the change in ventilator demand helps us understand how medical equipment needs are affected by the sudden surge of new patients expected in future pandemics. We will explore this relationship using a linear regression model based on data published by the County of Santa Clara Public Health Department from 2020-03-27 to 2021-05-23[@noauthor_covid-19_nodate].Because our study uses the time-series data, we constructed a weighted index to reflect time-lag effects. The index combines the daily number of new COVID-19 cases (20%) with the 7-day average COVID-19 case percentage (80%), scaled from 0 to 100, and is referred to as the ‘severity’ measure. This measure is the independent variable in our simple linear regression model, with the number of patients on ventilators as the dependent variable.
+First, we discuss the research background and proposal, then describe the data usage and processing. Next, we explain the setup and validation of the model, as well as its limitations. After presenting the results with relevant tables and graphs, we draw our conclusions. Through analysis, we found a positive correlation between the COVID-19 severity index and the demand for ventilators.
 
 # Data {#sec-data}
 
-The observational unit in this study is the daily hospital data from 2023/3/27-2021/5/23, provided by the County of Santa Clara Public Health Department. The sample size is 423 days. The two key variables are the number of new COVID-19 cases and the number of patients on ventilators, which are continuous variables measured in people. The data is generated by the County of Santa Clara Public Health Department and posted on the County of Santa Clara Open Data Portal. There are no missing values in the core variables. Besides, there are a small number of outliers that were retained as they likely reflect peak pandemic conditions. Overall, the data are clean, so the only processing performed was converting date strings into a datetime format. According to the data summary (@tbl-summary-table), the daily average number of new COVID-19 cases was 28.4 with a standard deviation of 28 and a maximum of 124. This data has significant fluctuations. The daily average number of patients using ventilators is 179.7 with a standard deviation of 34.5. This data has smaller fluctuations. Overall, the trend in the number of patients using ventilators is generally consistent with the trend in the number of new COVID-19 cases(@fig-tren-plot). Furthermore, due to the unique course of the COVID-19 disease, not all confirmed patients require ventilators immediately, resulting in a delayed peak in demand for medical equipment. We can observe this time delay in the data. This trend allows us to predict demand for medical equipment.
+The observation units in this study are the daily count of new COVID-19 cases and the daily number of patients on ventilators from 2020-03-27 to 2021-05-23, as provided by the County of Santa Clara Public Health Department. The sample size is 423 days. The dataset is a time series, in which the error terms are neither independent nor identically distributed, which does not meet the basic assumptions of regression analysis [@lidf2025coint]. 
+To fix this problem, we consider the time-lag effect. We defined a variable we will call the severity index to use as the independent variable for our analysis. This index combines the daily number of new COVID-19 cases (20% weight) with the 7-day average percentage of COVID-19 cases (80% weight).
+$$
+Severity= (0.2 * daily new case count) + (0.8 * 7-day average percentage)
+$$
+The values were then scaled to a 0–100 score range for statistical convenience. The score do not represent the actual number of cases; it only reflects the severity level defined by the index.
+The dependent variable is the number of patients on ventilators, which is a continuous variable measured in terms of the number of people. 
+The data is generated by the County of Santa Clara Public Health Department and posted on the County of Santa Clara Open Data Portal. There are no missing values in the core variables. Additionally, a small number of outliers were retained, as they likely reflect the peak pandemic conditions. Overall, the data are clean, so the only processing performed was converting date strings into a datetime format as well as scaling and normalizing the key data. According to the data summary (@tbl-summary-table), the average composite severity score was 24.1 with a standard deviation of 25 and a maximum of 100. This data has significant fluctuations. The daily average number of patients using ventilators is 179.7, with a standard deviation of 34.5. This data has smaller fluctuations. Overall, the trend in the number of patients using ventilators is generally consistent with the trend in the number of new COVID-19 cases(@fig-tren-plot). Despite accounting for the time lag, the inherent limitations of time series analysis cannot be completely avoided. We can observe this time delay in the data.
+
+\newpage
 
 
-```{r tbl-summary-table}
+```{r}
 #| echo: false
 #| warning: false
 #| message: false
-#| tbl-cap: "Data Summary of Covid-19 New Cases and Number of patients on ventilators"
+#| tbl-cap: "Data Summary of Composite Covid-19 Cases and Number of Patients on Ventilators"
 #| label: tbl-summary-table
 
 
+#cleaning data
 hos_data <- COVID_19_hospitalizations_by_date_20250917
 hos_data <- hos_data %>% 
-  dplyr::filter(!is.na(covid_new)) %>%
   mutate(
-    hos_Date = as.Date(Date)
-)
+    covid_pct_numeric = as.numeric(gsub("%", "", covid_pct_7davg)) / 100,
+    covid_new_numeric = as.numeric(covid_new)#standardize the scale of two variables
+  ) %>%
+  dplyr::filter(!is.na(covid_pct_numeric) & !is.na(covid_new_numeric)) %>%
+  mutate(
+    hos_Date = as.Date(Date),
+    covid_new_standardize = as.numeric(scale(covid_new_numeric,center = TRUE, scale = TRUE)),
+    covid_pct_standardize = as.numeric(scale(covid_pct_numeric,center = TRUE, scale = TRUE)),
+    composite = 0.8 * covid_pct_standardize + 0.2 * covid_new_standardize,#weighting method
+    covid_score = rescale(composite, to = c(0, 100))#rescale the composite data 
+  )
+#summary the data of two variables
 summary_stat <- hos_data %>%
   dplyr::summarise(
-    covid_new_mean = mean(covid_new),
-    vents_pts_mean = mean(vents_pts),
-    covid_new_std = sd(covid_new),
-    vents_pts_std = sd(vents_pts),
-    covid_new_max = max(covid_new),
-    vents_pts_max = max(vents_pts),
-    covid_new_min = min(covid_new),
-    vents_pts_min = min(vents_pts),
-    
-)
-colnames(summary_stat) <- c(
-  "Mean \n (covid_new)",
-  "Mean \n(vents_pts)",
-  "SD \n (covid_new)",
-  "SD \n(vents_pts)",
-  "Max \n (covid_new)",
-  "Max \n(vents_pts)",
-  "Min \n (covid_new)",
-  "Min \n(vents_pts)"
-)
+    covidscore_mean = mean(covid_score,na.rm = T),
+    covidscore_sd = sd(covid_score,na.rm = T),
+    covidscore_max = max(covid_score,na.rm = T),
+    covidscore_min = min(covid_score,na.rm = T),
+    ventspts_mean = mean(vents_pts,na.rm = T),
+    ventspts_sd = sd(vents_pts,na.rm = T),
+    ventspts_max = max(vents_pts,na.rm = T),
+    ventspts_min = min(vents_pts,na.rm = T)
+)%>%
+  tidyr::pivot_longer(cols = everything(),
+                      names_to = c("variable", "stat"),
+                      names_sep = "_") %>%
+  tidyr::pivot_wider(names_from = variable, values_from = value) %>%
+  dplyr::mutate(stat = factor(stat, levels = c("mean", "sd", "max", "min")))
 
+
+#set up the column name and make a table by using flextable() function
+colnames(summary_stat) <- c("Statistic", "COVID-19 Composite Severity Score", "Patients on Ventilators")
 
 data_summary_table <- flextable(summary_stat) %>%
-  add_header_lines(values = "Data Summary of Covid-19 New Cases and Number of patients on ventilators")%>%
+  add_header_lines(values = "Data Summary of composite Covid-19 cases and Number of patients on ventilators")%>%
   set_table_properties(width = 1, layout = "autofit") %>%
   autofit() %>%
   align(align = "center", part = "all") %>%
   fontsize(size = 7, part = "all") %>%
   bold(part = "header")
 
-data_summary_table
+data_summary_table   
+
+
 
 ```
+\\
 
 
-```{r fig-tren-plot}
+```{r fig.width=8, fig.height=5}
 #| echo: false
 #| warning: false
 #| message: false
 #| fig-cap: "Trends Over Time"
 #| label: fig-tren-plot
 
-ggplot(hos_data,aes(x = Date))+
-  geom_line(aes(y = covid_new, group = 1, color = "covid_new"), linewidth = 0.5)+
-  geom_line(aes(y = vents_pts, group = 2, color = "vents_pts"), linewidth = 0.5)+
+ggplot(hos_data, aes(x = Date)) +
+  geom_line(aes(y = covid_score,group = 1, color = "COVID-19 Composite Severity Score"), linewidth = 0.8) +
+  geom_line(aes(y = vents_pts, group = 2,color = "Ventilator Patients"), linewidth = 0.8) +
   scale_color_manual(
-    values = c("covid_new" = "red", "vents_pts" = "green")) +
+    values = c("COVID-19 Composite Severity Score" = "red", "Ventilator Patients" = "blue")
+  ) +
   labs(
     title = "Trends Over Time",
     subtitle = "2020/3/27-2021/5/23",
     x = "Date",
-    y = "count"
-   ) +
+    y = "Value"
+  ) +
   theme_minimal() 
 ```
+
 
 \newpage
 
 # Methods
 
 
-```{r fig-quan-plot}
+The score of COVID-19 severity and the number of patients on ventilators are continuous variables. According to the trend chart of the data,it suggests a potential linear correlation between two variables. Therefore, we apply a simple linear regression model. 
+$$
+y_i = \beta_0 + \beta_1 x_i + \varepsilon_i
+$$
+Here,
+
+$y_i$ = The number of patients on ventilators on a given day  
+$X_i$ = The score of COVID-19 composite severity on a given day
+$\beta_0$ = The average number of patients on ventilators when composite severity score = 0(intercept)
+$\beta_1$ = The expected change in the number of patients using ventilators for each additional unit of COVID-19 composite severity (slope)  
+$\varepsilon_i$ = Error term  
+
+In this model, we use these methods to process the data: Using the weighted method and scale method to clean up the data, using the ordinary least squares (OLS) method to estimate the parameters, and applying the lm() function in R to fit the model. The OLS method assumes that the error term -$\varepsilon_i$ follows a normal distribution. The QQ Plot (@fig-quan-plot)indicates that the majority of the residuals closely align with the reference line. A few data points fall below the expected quantiles on the left, while a few data points fall above the expected quantiles. This suggests that there might be outliers. The Residual histogram(@fig-RH-plot) shows that the residual distribution is approximately normal, but a higher value on the right tail makes the right side exceed the normal curve. Together with the QQ plot, this indicates the normality assumption is not fully satisfied. The Residual and Projector plot (@fig-RP-plot) shows that as the predictor increases, the residuals form a cone shape and are clustered. This is because we use time-series data as the key variables, where the error terms are not independent and the variance is not constant.
+In addition to the limitations of error, the definition of the severity scale and the choice of weighting ratio also present limitations. Because we are using time series data, we must take the time-lag effect into consideration. In the raw data, the units of measurement for the number of new cases (number) and the 7-day average case percentage (percentage) don't match. Even after normalizing the two and calculating a composite value using a 2:8 weighting method, the result still does not correspond to the magnitude of ventilator demand. For ease of understanding and presentation, we used a 0–100 scale to measure severity. However, in reality, COVID-19 composite severity scores are inherently difficult to define, and a single score cannot accurately reflect the number of new cases.
+Furthermore, I have consulted numerous sources but have not found a clear definition of the "appropriate ratio" between the number of new cases and the 7-day average in the weighting method. This study, drawing on relevant COVID-19 disease progression data[@Huang2020ClinicalFeatures], shows that the median time from illness onset to dyspnoea is 7 days. It shows that the 7-day average case percentage should account for a larger proportion. Therefore, we established a 2:8 weighting ratio. These issues limit the value of the measurement of key variables in guiding, predicting, and referencing practical applications.
+
+```{r fig.width=8, fig.height=3}
 #| echo: false
 #| warning: false
 #| message: false
 #| fig-cap: "Quantile-quantile plot of residuals"
 #| label: fig-quan-plot
 
-
-hos_data <- COVID_19_hospitalizations_by_date_20250917
-hos_data <- hos_data %>% 
-  dplyr::filter(!is.na(covid_new)) %>%
-  mutate(
-    hos_Date = as.Date(Date)
-)
-
-covid_vents_mode <- lm(vents_pts~covid_new, data = hos_data)
-
+covid_vents_mode <- lm(vents_pts~covid_score, data = hos_data)
 mod_residuals <- residuals(covid_vents_mode)
 mod_fitted <- fitted(covid_vents_mode)
 ggplot(data.frame(residual = mod_residuals), aes(sample = residual)) +
   geom_qq() +
   geom_qq_line() +
-  xlab("Theoretical quantile (Normal distribution)") +
-  ylab("Sample quantile") + 
-  ggtitle("Quantile-quantile plot of residuals")+
- theme_minimal() 
+  xlab("Theoretical Quantile (Normal Distribution)") +
+  ylab("Sample Quantile") + 
+  ggtitle("Quantile-Quantile Plot of Residuals")+
+  theme_minimal() 
 ```
+\\
 
-
-The number of new COVID-19 cases and the number of patients on ventilators are continuous variables. According to the trend chart of the data, it suggests a potential linear correlation between two variables. Therefore, we apply a simple linear regression model. $y_i = \beta_0 + \beta_1 x_i + \varepsilon_i$ Here, $y_i$ covid_new: The number of new COVID-19 cases on a given day $X_i$(Vents_pts): The number of patients on ventilators on a given day $\beta_0$(intercept):The average number of patients on ventilators when there are no new COVID-19 cases. $\beta_1$ (slope): The expected change in the number of patients using ventilators for each additional new COVID-19 case. In this model, we use the ordinary least squares (OLS) method to estimate the parameters, and apply the lm() function in R to fit the model. The OLS method assumes that the error term $\varepsilon_i$ follows a normal distribution. The QQ-Plot (@fig-quan-plot)indicates that the majority of the residuals closely align with the reference line. A few data points fall below the expected quantiles on the left, while a few data points fall above the expected quantiles. This suggests that there might be outliers. In general, the error terms are approximately normally distributed.
-
-
-# Results
-
-@fig-model-plot indicates that the number of patients on ventilators becomes increasingly dispersed as the number of new COVID-19 cases rises, and the model demonstrates a moderate fit.From the data summary((@tbl-model-table)), we find F(1, 401) = 655.6, p-value: \< .001, and estimate of covid_new = 0.97, indicating that the linear regression model is highly significant, and the predictor variable (x) can explain the variation in the dependent variable (y). Multiple R-squared: 0.6205 and Adjusted R-squared: 0.6195 indicate a model fit of approximately 60%. This result is likely due to the failure to account for the lag effect in ventilator usage, the proportion of severe COVID-19 cases, and seasonal factors, which can all affect ventilator use.
-This study’s results show that the number of newly confirmed COVID-19 cases is a key factor influencing the demand in ventilator usage. Specifically, for every new COVID-19 patient during this time period, there is an expected increase of 0.97 ventilator patients. This finding provides insights into the relationship between epidemics the medical equipment demand, contributing to better planning for the stockpiling, deploying and resource planning of medical equipment during epidemics. We can improve the model’s fit by adding in additional unaccounted factors.
-
-```{r fig-model-plot}
+```{r fig.width=8, fig.height=3}
 #| echo: false
 #| warning: false
 #| message: false
-#| fig-cap: "Number of patients on ventilators vs. Number of new COVID cases"
+#| fig-cap: "Residual Histogram"
+#| label: fig-RH-plot
+
+#residual histogram
+ggplot(data = NULL, aes(x = residuals(covid_vents_mode))) +
+  geom_histogram(aes(y = ..density..),bins = 30, fill = "lightyellow", color = "black", alpha = 0.7) +
+  labs(title = "Residual Histogram",
+       x = "Residual",
+       y = "Frequency") +
+  geom_density(color = "red", size = 1) +
+  theme_minimal()
+```
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-cap: "Residual vs. Predictor"
+#| label: fig-RP-plot
+
+
+ggplot(hos_data, aes(x = covid_score, y = residuals(covid_vents_mode))) +
+  geom_point(alpha = 0.6, size = 2) +
+  geom_hline(yintercept = 0, color = "red", linewidth = 1) +
+  labs(title = "Residual vs. Predictor",
+       x = "Covid Severity Score",
+       y = "Residual") +
+  theme_minimal()
+```
+
+\newpage
+
+# Results
+
+@fig-model-plot indicates that the number of patients on ventilators becomes increasingly dispersed as the score of COVID-19 composite severity rises, and the model demonstrates a moderate fit.From the data summary((@tbl-model-table)), we find F = 1396.39, p-value \< .001, and estimate of covid_score = 1.20, indicating that the linear regression model is highly significant, and the predictor variable (x) can explain the variation in the dependent variable (y). Multiple R-squared: 0.777 and Adjusted R-squared: 0.776 indicate a model fit of approximately 70%.Besides, the COVID-19 composite severity is a key factor influencing the demand in ventilator usage. Specifically, for every composite severity score during this time period, there is an expected increase of 1.2 ventilator patients.
+Although the model seems to fit the data well, its true explanatory and predictive capabilities are limited when combined with the aforementioned limitations.
+
+\newpage
+```{r,fig.width=8, fig.height=4}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-cap: "Number of patients on ventilators vs. COVID-19 Composite Severity Score"
 #| label: fig-model-plot
 
-covid_vents_mode <- lm(vents_pts~covid_new, data = hos_data)
-ggplot(covid_vents_mode, aes(x = covid_new,y = vents_pts) )+
+covid_vents_mode <- lm(vents_pts~covid_score, data = hos_data)
+ggplot(covid_vents_mode, aes(x = covid_score,y = vents_pts) )+
   geom_point(size = 1) +
   geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 0.5) +
   labs(
-    x = "	Number of new COVID cases",
-    y = "	Number of patients on ventilators",
-    title = "Number of patients on ventilators vs. \n Number of new COVID cases")+
+    x = "COVID-19 Composite Severity Score",
+    y = "Number of patients on ventilators",
+    title = "Number of patients on ventilators vs. COVID-19 Composite Severity Score")+
   theme_minimal() 
 
 ```
 
 
-```{r tbl-model-table}
+```{r}
 #| echo: false
 #| warning: false
 #| message: false
@@ -206,7 +270,5 @@ model_summary_table
 ```
 
 \newpage
-
-
 
 # References
