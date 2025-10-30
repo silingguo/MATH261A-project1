@@ -119,3 +119,4 @@ model_summary_table <- flextable(model_tidy) %>%
     "| F-statistic:", round(model_glance$statistic, 2)
   ))
 model_summary_table
+

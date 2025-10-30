@@ -9,13 +9,13 @@ Data used in this project is obtained from [Santa Clara County Open Data Portal]
 
 The final report and code were written by Siling Guo, but the following resources were used for preliminary research:
 
-* LLM(ex.chatgpt,chatgptEdu) for explaining terminology,R syntax,references.bib format,Github-Tutorials
+* LLM(ex.chatgpt,chatgptEdu) for explaining terminology,R syntax,references.bib format,Github-Tutorials,writing grammar
 * Online forums (ex. csdn,runoob) for studying and understanding various methods for generating tables of data.
 * Wikipedia was used as a supplementary resource to gain background information. 
 * Google Translate for translation assistance.
 * [Understanding QQ Plots — UVA Library](https://library.virginia.edu/data/articles/understanding-q-q-plots)
 * [Global Challenges to Public Health Care Systems during the COVID‑19 Pandemic (NCBI)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9409667/)
-
+* R (version 4.4.1)
 
 
 # Acknowledgments

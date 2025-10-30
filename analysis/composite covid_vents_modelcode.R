@@ -160,13 +160,20 @@ ggplot(hos_data, aes(x = covid_score, y = residuals(covid_vents_mode))) +
 
 
 
-
-
 #residual histogram
 ggplot(data = NULL, aes(x = residuals(covid_vents_mode))) +
   geom_histogram(bins = 30, fill = "lightyellow", color = "black", alpha = 0.7) +
   labs(title = "residual histogram",
        x = "residual",
        y = "frequency") +
+  theme_minimal()
+
+#make the redisual& Time plot
+ggplot(hos_data, aes(x = 1:nrow(hos_data), y = residuals(covid_vents_mode))) +
+  geom_point() +
+  geom_hline(yintercept = 0) +
+  ylab("Residual value") +
+  xlab("Time") + 
+  ggtitle("Residual vs. Time")+
   theme_minimal()
 

@@ -1,11 +1,11 @@
 ---
 title: "The Relationship Between the COVID-19 Cases and the Demand of Ventilators"
-subtitle: "Simple Linear Model Project"
+subtitle: "Can Case Numbers Predict the Medical Demand?"
 author: "Siling Guo"
 thanks: "Project repository available at: [https://github.com/silingguo/MATH261A-project1](https://github.com/silingguo/MATH261A-project1)."
-date: 2025-09-23
+date: 2025-10-29
 date-format: long
-abstract: "This study explores the relationship between the change in the number of new COVID-19 cases and daily ventilator demand during the COVID-19 pandemic. A simple linear regression model was established based on the data provided by the County of Santa Clara Public Health Department between 2020-03-27 and 2021-05-23. In the model, we use a weighted index of daily new COVID-19 cases (20%) and the 7-day average percent of COVID-19 cases (80%) as the independent variable, and ventilator demand as the dependent variable. The results shows a positive correlation, and there was an expected increase of 1.2 units of ventilator demand for each unit increase in the weighted index ($\\beta_1$=1.2, p<0.001, R Squared=0.78). This model may not have strong predictive power because it is based on time series data. However, it helps illustrate the potential demand for medical equipment during pandemics."
+abstract: "This study explores the effect of new COVID-19 cases on ventilator demand during the COVID-19 pandemic. A simple linear regression model was established using data from the County of Santa Clara Public Health Department. In the model, we use a weighted index that combines daily and 7-day average case data as the independent variable, and daily ventilator demand as the dependent variable. The results show a positive correlation, with an expected increase of 1.2 units in ventilator demand for each point increase in the weighted index (p < 0.001, R^2 = 0.78). However, applying a simple regression model to time-series data has limitations, and this model may not have strong predictive power."
 format: pdf
 bibliography: references.bib
 number-sections: true
@@ -20,30 +20,40 @@ number-sections: true
 library(dplyr)
 library(lubridate)
 library(ggplot2)
-library(gt)
 library(broom)
-library(readr)
 library(flextable)
 library(scales)
+library(readr)
 COVID_19_hospitalizations_by_date_20250917 <- read_csv("../data/COVID-19_hospitalizations_by_date_20250917.csv")
 View(COVID_19_hospitalizations_by_date_20250917)
 ```
 
 # Introduction
 
-The 2020-2023 COVID-19 pandemic illustrated the challenges in balancing the limited availability of medical resources with the influx of demand caused by the surge in new COVID-19 cases, especially in resource-limited countries. Although the COVID-19 pandemic has ended, analyzing the relationship between the rate of new COVID-19 cases and the change in ventilator demand helps us understand how medical equipment needs are affected by the sudden surge of new patients expected in future pandemics. We will explore this relationship using a linear regression model based on data published by the County of Santa Clara Public Health Department from 2020-03-27 to 2021-05-23[@noauthor_covid-19_nodate].Because our study uses the time-series data, we constructed a weighted index to reflect time-lag effects. The index combines the daily number of new COVID-19 cases (20%) with the 7-day average COVID-19 case percentage (80%), scaled from 0 to 100, and is referred to as the ‘severity’ measure. This measure is the independent variable in our simple linear regression model, with the number of patients on ventilators as the dependent variable.
-First, we discuss the research background and proposal, then describe the data usage and processing. Next, we explain the setup and validation of the model, as well as its limitations. After presenting the results with relevant tables and graphs, we draw our conclusions. Through analysis, we found a positive correlation between the COVID-19 severity index and the demand for ventilators.
+One major symptom of a severe COVID-19 infection is a low blood oxygen saturation level, which is often treated by mechanical ventilation. During the 2020-2023 COVID-19 pandemic, the spread of the virus before the availability of effective treatments and vaccines caused an influx of demand for ventilators [@filip_global_2022]. Although the pandemic has ended, analyzing the relationship between the number of COVID-19 cases and ventilator demand may illustrate how medical equipment needs are affected by a surge in new patients during the beginning stages of a pandemic. 
+
+Our hypothesis is that an increase in the number of COVID-19 patients is followed by an increase in ventilator usage. The relationship is tested by using a linear regression model based on time-series data published by the County of Santa Clara Public Health Department (SCCPHD). 
+
+We constructed a new independent variable, which we will call the Severity Score, which combines the daily new cases and the 7-day average new cases. We built this variable to smooth the data and show the general trend more clearly. The construction method will be shown in detail in the Data section. The number of patients on ventilators is the dependent variable. The results show a positive correlation, but the model’s prediction is limited because the data are time-series, which may be affected by dependent error and unequal variance. We will discuss this issue later in the Discussion section.
+
+In this paper, we will first discuss the research background and proposal, then describe the data usage and new variable construction and processing. Next, we explain the setup and validation of the model, as well as its limitations. After presenting the results with relevant tables and graphs, we present the findings and discuss the limitations 
+
 
 # Data {#sec-data}
 
-The observation units in this study are the daily count of new COVID-19 cases and the daily number of patients on ventilators from 2020-03-27 to 2021-05-23, as provided by the County of Santa Clara Public Health Department. The sample size is 423 days. The dataset is a time series, in which the error terms are neither independent nor identically distributed, which does not meet the basic assumptions of regression analysis [@lidf2025coint]. 
-To fix this problem, we consider the time-lag effect. We defined a variable we will call the severity index to use as the independent variable for our analysis. This index combines the daily number of new COVID-19 cases (20% weight) with the 7-day average percentage of COVID-19 cases (80% weight).
+In this study, we used the daily counts of new COVID-19 cases and the number of patients on ventilators from March 27, 2020 to May 23, 2021 [@noauthor_covid-19_nodate], provided by the SCCPHD and posted on the County of Santa Clara Open Data Portal. This time period represents the beginning of the COVID-19 pandemic. The World Health Organization (WHO) declared a pandemic in March 2020 due to the rising number of COVID-19 infections. By May 2021, several vaccines became available, which controlled the spread of the pandemic. The total sample size is 423 days with no missing values in the core variables. A small number of outliers were retained, as they likely reflect the peak pandemic conditions. 
+
+Overall, the data are clean, so the only processing performed was converting date strings into a datetime format as well as scaling and normalizing the key data. 
+The original dataset consists of time-series data, the error terms are neither independent nor identically distributed, and may lead to misleading results due to fluctuations and time lag. This data does not meet the basic assumptions of regression analysis [@lidf2025coint]. 
+
+To reduce the ‘noise’ of time-series data and improve the predictive performance, we applied a Weighted Moving Average (WMA) to construct a scaled weighted index, Severity Score, as the independent variable.
 $$
-Severity= (0.2 * daily new case count) + (0.8 * 7-day average percentage)
+Severity = (0.2 \times \text{daily new case count}) + (0.8 \times \text{7-day average percentage})
 $$
-The values were then scaled to a 0–100 score range for statistical convenience. The score do not represent the actual number of cases; it only reflects the severity level defined by the index.
-The dependent variable is the number of patients on ventilators, which is a continuous variable measured in terms of the number of people. 
-The data is generated by the County of Santa Clara Public Health Department and posted on the County of Santa Clara Open Data Portal. There are no missing values in the core variables. Additionally, a small number of outliers were retained, as they likely reflect the peak pandemic conditions. Overall, the data are clean, so the only processing performed was converting date strings into a datetime format as well as scaling and normalizing the key data. According to the data summary (@tbl-summary-table), the average composite severity score was 24.1 with a standard deviation of 25 and a maximum of 100. This data has significant fluctuations. The daily average number of patients using ventilators is 179.7, with a standard deviation of 34.5. This data has smaller fluctuations. Overall, the trend in the number of patients using ventilators is generally consistent with the trend in the number of new COVID-19 cases(@fig-tren-plot). Despite accounting for the time lag, the inherent limitations of time series analysis cannot be completely avoided. We can observe this time delay in the data.
+According to[@Huang2020ClinicalFeatures], the median time from illness onset to shortness of breath is 7 days. We assumed that the 7-day average case percentage reflects the overall trend better, so we gave it a higher weight (80%), while the daily new cases show short-term changes and were given a smaller weight (20%). Because the two variables use different units(counts and percentages), the Severity does not directly correspond to the magnitude of ventilator demand. For ease of understanding and presentation, the values were then scaled to a 0–100 range for statistical convenience. The score does not represent the actual number of cases; it only reflects the severity as defined by the index. 
+
+The dependent variable is the number of patients on ventilators, which is a continuous variable measured in terms of the number of people. According to the data summary (@tbl-summary-table), the median composite severity score is 24.1 with a standard deviation of 25 and a maximum of 100, showing considerable variation. The daily average number of patients using ventilators is 179.7, with a standard deviation of 34.5. This data shows smaller fluctuations. Overall, the trend in the number of patients using ventilators is generally consistent with the trend in the number of new COVID-19 cases (@fig-tren-plot). Despite accounting for the time lag, the inherent limitations of time series analysis cannot be fully avoided. Limitations will be discussed in the discussion section.
+
 
 \newpage
 
@@ -87,7 +97,9 @@ summary_stat <- hos_data %>%
                       names_to = c("variable", "stat"),
                       names_sep = "_") %>%
   tidyr::pivot_wider(names_from = variable, values_from = value) %>%
-  dplyr::mutate(stat = factor(stat, levels = c("mean", "sd", "max", "min")))
+  dplyr::mutate( stat = dplyr::recode(stat,mean = "Mean",sd   = "Standard Deviation",max  = "Maximum",min  = "Minimum"),
+    stat = factor(stat, levels = c("Mean", "Standard Deviation", "Maximum", "Minimum"))
+    )
 
 
 #set up the column name and make a table by using flextable() function
@@ -106,7 +118,7 @@ data_summary_table
 
 
 ```
-\\
+
 
 
 ```{r fig.width=8, fig.height=5}
@@ -137,56 +149,58 @@ ggplot(hos_data, aes(x = Date)) +
 # Methods
 
 
-The score of COVID-19 severity and the number of patients on ventilators are continuous variables. According to the trend chart of the data,it suggests a potential linear correlation between two variables. Therefore, we apply a simple linear regression model. 
+The score of COVID-19 severity and the number of patients on ventilators are continuous variables. The trend chart of the data suggests a potential linear correlation between two variables. We apply a simple linear regression model. 
 $$
-y_i = \beta_0 + \beta_1 x_i + \varepsilon_i
+Y_i = \beta_0 + \beta_1 X_i + \varepsilon_i
 $$
-Here,
+The dependent variable, $Y_i$, represents the number of patients on ventilators on a given day. The independent variable, $X_i$, represents the COVID-19 composite severity score on a given day. The intercept, $\beta_0$, represents the average number of patients on ventilators when the composite severity score is 0. The slope, $\beta_1$, represents the expected change in the number of patients using ventilators for each additional unit of COVID-19 composite severity. The error, $\varepsilon_i$, represents the error term. 
+In this model, the weighted method and scale method was used to clean up the data, the ordinary least squares (OLS) method was used to estimate the parameters. To ensure valid inference, we need to meet these four assumptions:
 
-$y_i$ = The number of patients on ventilators on a given day  
-$X_i$ = The score of COVID-19 composite severity on a given day
-$\beta_0$ = The average number of patients on ventilators when composite severity score = 0(intercept)
-$\beta_1$ = The expected change in the number of patients using ventilators for each additional unit of COVID-19 composite severity (slope)  
-$\varepsilon_i$ = Error term  
+**Linearity**: The scatter plot (@fig-model-plot) shows that two variables are linearly correlated; the number of ventilators increases as the Severity Score increases in general.
 
-In this model, we use these methods to process the data: Using the weighted method and scale method to clean up the data, using the ordinary least squares (OLS) method to estimate the parameters, and applying the lm() function in R to fit the model. The OLS method assumes that the error term -$\varepsilon_i$ follows a normal distribution. The QQ Plot (@fig-quan-plot)indicates that the majority of the residuals closely align with the reference line. A few data points fall below the expected quantiles on the left, while a few data points fall above the expected quantiles. This suggests that there might be outliers. The Residual histogram(@fig-RH-plot) shows that the residual distribution is approximately normal, but a higher value on the right tail makes the right side exceed the normal curve. Together with the QQ plot, this indicates the normality assumption is not fully satisfied. The Residual and Projector plot (@fig-RP-plot) shows that as the predictor increases, the residuals form a cone shape and are clustered. This is because we use time-series data as the key variables, where the error terms are not independent and the variance is not constant.
-In addition to the limitations of error, the definition of the severity scale and the choice of weighting ratio also present limitations. Because we are using time series data, we must take the time-lag effect into consideration. In the raw data, the units of measurement for the number of new cases (number) and the 7-day average case percentage (percentage) don't match. Even after normalizing the two and calculating a composite value using a 2:8 weighting method, the result still does not correspond to the magnitude of ventilator demand. For ease of understanding and presentation, we used a 0–100 scale to measure severity. However, in reality, COVID-19 composite severity scores are inherently difficult to define, and a single score cannot accurately reflect the number of new cases.
-Furthermore, I have consulted numerous sources but have not found a clear definition of the "appropriate ratio" between the number of new cases and the 7-day average in the weighting method. This study, drawing on relevant COVID-19 disease progression data[@Huang2020ClinicalFeatures], shows that the median time from illness onset to dyspnoea is 7 days. It shows that the 7-day average case percentage should account for a larger proportion. Therefore, we established a 2:8 weighting ratio. These issues limit the value of the measurement of key variables in guiding, predicting, and referencing practical applications.
+**Independence of error**: The Residual vs Time plot (@fig-RT-plot) shows that the residuals are clustering and exhibit a cyclical pattern. This pattern indicates the errors are dependent, which may lead to underestimated standard errors
 
-```{r fig.width=8, fig.height=3}
+**Equal Variance of error**: The Residual vs Predictor plot (@fig-RP-plot) shows that as the predictor increases, the residuals form a cone shape and are clustered. The variance is not constant, so the standard t-test might not give accurate results.
+
+**Normality of error**: If the residuals approximately along the reference line in QQ plot, the residuals are approximately normally distributed.The QQ plot (@fig-quan-plot) indicates that the majority of the residuals closely align with the reference line. A few data points fall below the expected quantiles on the left, while a few data points fall above the expected quantiles. This suggests that there might be outliers. In the Residual histogram (@fig-RH-plot), the density line intuitively shows that the residual distribution is approximately normal, but a higher value on the right tail makes the right side exceed the curve. Together with the QQ plot, the pattern indicates that the normality assumption is not fully satisfied, so the validity of confidence intervals and t-tests may be affected.
+
+The value of measurements of key variables for guiding, predicting, and informing practical applications is limited because time-series data violate several model assumptions.
+
+We applied the R’s lm() function to fit the linear model[@R-base], and we used several R packages to generate a table, manipulate and visualize the data, including dplyr [@R-dplyr], lubridate [@R-lubridate], ggplot2[@R-ggplot2], broom[@R-broom], flextable [@R-flextable], and scales[@R-scales].
+
+```{r,fig.width=8, fig.height=4}
 #| echo: false
 #| warning: false
 #| message: false
-#| fig-cap: "Quantile-quantile plot of residuals"
-#| label: fig-quan-plot
+#| fig-cap: "Number of patients on ventilators vs. COVID-19 Composite Severity Score"
+#| label: fig-model-plot
 
 covid_vents_mode <- lm(vents_pts~covid_score, data = hos_data)
-mod_residuals <- residuals(covid_vents_mode)
-mod_fitted <- fitted(covid_vents_mode)
-ggplot(data.frame(residual = mod_residuals), aes(sample = residual)) +
-  geom_qq() +
-  geom_qq_line() +
-  xlab("Theoretical Quantile (Normal Distribution)") +
-  ylab("Sample Quantile") + 
-  ggtitle("Quantile-Quantile Plot of Residuals")+
+ggplot(covid_vents_mode, aes(x = covid_score,y = vents_pts) )+
+  geom_point(size = 1) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 0.5) +
+  labs(
+    x = "COVID-19 Composite Severity Score",
+    y = "Number of patients on ventilators",
+    title = "Number of patients on ventilators vs. COVID-19 Composite Severity Score")+
   theme_minimal() 
-```
-\\
 
-```{r fig.width=8, fig.height=3}
+```
+
+```{r}
 #| echo: false
 #| warning: false
 #| message: false
-#| fig-cap: "Residual Histogram"
-#| label: fig-RH-plot
+#| fig-cap: "Residual vs. Time"
+#| label: fig-RT-plot
 
-#residual histogram
-ggplot(data = NULL, aes(x = residuals(covid_vents_mode))) +
-  geom_histogram(aes(y = ..density..),bins = 30, fill = "lightyellow", color = "black", alpha = 0.7) +
-  labs(title = "Residual Histogram",
-       x = "Residual",
-       y = "Frequency") +
-  geom_density(color = "red", size = 1) +
+
+ggplot(hos_data, aes(x = 1:nrow(hos_data), y = residuals(covid_vents_mode))) +
+  geom_point() +
+  geom_hline(yintercept = 0,color = "red", linewidth = 1) +
+  ylab("Residual value") +
+  xlab("Time") + 
+  ggtitle("Residual vs. Time")+
   theme_minimal()
 ```
 
@@ -207,32 +221,61 @@ ggplot(hos_data, aes(x = covid_score, y = residuals(covid_vents_mode))) +
   theme_minimal()
 ```
 
+```{r fig.width=8, fig.height=3}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-cap: "Quantile-quantile plot of residuals"
+#| label: fig-quan-plot
+
+covid_vents_mode <- lm(vents_pts~covid_score, data = hos_data)
+mod_residuals <- residuals(covid_vents_mode)
+mod_fitted <- fitted(covid_vents_mode)
+ggplot(data.frame(residual = mod_residuals), aes(sample = residual)) +
+  geom_qq() +
+  geom_qq_line(color = "red", linewidth = 1) +
+  xlab("Theoretical Quantile (Normal Distribution)") +
+  ylab("Sample Quantile") + 
+  ggtitle("Quantile-Quantile Plot of Residuals")+
+  theme_minimal() 
+```
+
+```{r fig.width=8, fig.height=3}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-cap: "Residual Histogram"
+#| label: fig-RH-plot
+
+#residual histogram
+ggplot(data = NULL, aes(x = residuals(covid_vents_mode))) +
+  geom_histogram(aes(y = ..density..),bins = 30, fill = "lightyellow", color = "black", alpha = 0.7) +
+  labs(title = "Residual Histogram",
+       x = "Residual",
+       y = "Frequency") +
+  geom_density(color = "red", size = 1) +
+  theme_minimal()
+```
+
+
 \newpage
 
 # Results
 
-@fig-model-plot indicates that the number of patients on ventilators becomes increasingly dispersed as the score of COVID-19 composite severity rises, and the model demonstrates a moderate fit.From the data summary((@tbl-model-table)), we find F = 1396.39, p-value \< .001, and estimate of covid_score = 1.20, indicating that the linear regression model is highly significant, and the predictor variable (x) can explain the variation in the dependent variable (y). Multiple R-squared: 0.777 and Adjusted R-squared: 0.776 indicate a model fit of approximately 70%.Besides, the COVID-19 composite severity is a key factor influencing the demand in ventilator usage. Specifically, for every composite severity score during this time period, there is an expected increase of 1.2 ventilator patients.
-Although the model seems to fit the data well, its true explanatory and predictive capabilities are limited when combined with the aforementioned limitations.
+We conducted a t-test to determine whether the Severity Score influences ventilator demand.
+The setup is as follows:
+The null hypothesis, $H_0$, represents $\beta_1$ = 0, meaning there is no relationship between the Severity Score and the ventilator demand.
+
+The alternative hypothesis, $H_1$, represents $\beta_1$ $\neq$ 0, meaning the relationship between Severity Score and the ventilator demand is significant.
+
+The results (@tbl-model-table) show that the coefficient for Severity Score is positive (t = 37.37, p < 0.001). Therefore, we reject $H_0$ and conclude that there is a significant relationship between the Severity Score and ventilator demand.
+
+As we discussed above, the time-series data violate the assumptions of equal variance, normality, and independence of the error terms are not fully satisfied. These violations will reduce the t-test's accuracy.
+The estimate of covid_score is 1.20, indicating that the linear regression model is highly significant.For every composite severity score point increase during this time period, there is an expected increase of 1.2 ventilator patients. The intercept is 150.62, it is positive because there is ventilator usage for reasons other than COVID-19. Multiple R-squared: 0.777 and Adjusted R-squared: 0.776 indicate a model fit of approximately 77%. 
+
 
 \newpage
-```{r,fig.width=8, fig.height=4}
-#| echo: false
-#| warning: false
-#| message: false
-#| fig-cap: "Number of patients on ventilators vs. COVID-19 Composite Severity Score"
-#| label: fig-model-plot
 
-covid_vents_mode <- lm(vents_pts~covid_score, data = hos_data)
-ggplot(covid_vents_mode, aes(x = covid_score,y = vents_pts) )+
-  geom_point(size = 1) +
-  geom_smooth(method = "lm", se = TRUE, color = "red", linewidth = 0.5) +
-  labs(
-    x = "COVID-19 Composite Severity Score",
-    y = "Number of patients on ventilators",
-    title = "Number of patients on ventilators vs. COVID-19 Composite Severity Score")+
-  theme_minimal() 
-
-```
 
 
 ```{r}
@@ -268,6 +311,18 @@ model_summary_table <- flextable(model_tidy) %>%
 model_summary_table
 
 ```
+# Discussion
+Overall, according to the results, the model seems to fit the data well; however, its true explanatory and predictive capabilities is limited. The time-series data we used here violate the assumptions of the simple linear regression model, so the result should be interpreted with caution.
+
+We applied a smoothing method to construct a Severity Score variable to reduce fluctuations in the data, but it does not actually address the temporal dependence in the dataset. The smoothing method is a way to enhance the model’s stability, reduce lag effect; however, it does not fundamentally change characteristics of the time-series data, such as dependence of error and temporal dependence. 
+
+The error term is the basis of statistical inference because it determines how variance and uncertainty are estimated in the model. When its assumptions are not met, the standard errors, t-tests, and confidence intervals become unreliable, weakening both the model’s inference and its predictions. 
+
+If error terms are highly related, the model may misinterpret the relationship between the two variables, giving an underestimated p-value and inflated t-value. In our study, this issue makes it difficult to interpret the real causal relation between new COVID-19 cases and ventilator demand. In reality, ventilator demand is likely influenced by other factors beyond infection severity, such as population age structure, vaccination rates, and seasonal factors.
+
+In practice, the COVID-19 composite Severity Score is inherently difficult to define, and a single score cannot accurately reflect the number of new cases, giving it limited practical value. Moreover, despite consulting multiple sources, we have not found a clear definition of the “appropriate ratio” between the number of new cases and the 7-day average in the weighting method. 
+
+This study intends to explore the effect of COVID-19 new cases on ventilator demand. However, we cannot use this model to examine the relationship due to limitations in the dataset and the regression model. Nevertheless, while the simple linear regression model is limited and cannot fit complex datasets, it is a good starting point to identify the data pattern and gain insight.
 
 \newpage
 
