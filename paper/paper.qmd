@@ -2,7 +2,7 @@
 title: "The Relationship Between the COVID-19 Cases and the Demand of Ventilators"
 subtitle: "Can Case Numbers Predict the Medical Demand?"
 author: "Siling Guo"
-thanks: "Project repository available at: [https://github.com/silingguo/MATH261A-project1](https://github.com/silingguo/MATH261A-project1)."
+thanks: "Project repository available at:[https://github.com/silingguo/MATH261A-project1](https://github.com/silingguo/MATH261A-project1)."
 date: 2025-10-29
 date-format: long
 abstract: "This study explores the effect of new COVID-19 cases on ventilator demand during the COVID-19 pandemic. A simple linear regression model was established using data from the County of Santa Clara Public Health Department. In the model, we use a weighted index that combines daily and 7-day average case data as the independent variable, and daily ventilator demand as the dependent variable. The results show a positive correlation, with an expected increase of 1.2 units in ventilator demand for each point increase in the weighted index (p < 0.001, R^2 = 0.78). However, applying a simple regression model to time-series data has limitations, and this model may not have strong predictive power."
